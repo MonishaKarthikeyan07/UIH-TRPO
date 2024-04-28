@@ -1,7 +1,7 @@
+import torch.utils.data as data
 import os
 from PIL import Image
-import torch
-from torch.utils.data import Dataset, DataLoader
+import numpy as np
 from torchvision import transforms
 
 def img_loader(path):
@@ -19,9 +19,9 @@ def get_imgs_list(ori_dirs, ucc_dirs):
 
     return img_list
 
-class UWCCDataset(Dataset):
+class uwcc(data.Dataset):
     def __init__(self, ori_dirs, ucc_dirs, train=True, loader=img_loader):
-        super(UWCCDataset, self).__init__()
+        super(uwcc, self).__init__()
 
         self.img_list = get_imgs_list(ori_dirs, ucc_dirs)
         if len(self.img_list) == 0:
@@ -41,7 +41,7 @@ class UWCCDataset(Dataset):
 
         if self.train:
             oritransform = transforms.Compose([
-                # Data augmentation transforms for training (if needed)
+                # Data augmentation transforms for training
                 transforms.ToTensor(),
             ])
             ucctransform = transforms.Compose([
@@ -63,32 +63,3 @@ class UWCCDataset(Dataset):
 
     def __len__(self):
         return len(self.img_list)
-
-class TRPOAgent:
-    def __init__(self):
-        self.dataset = None
-        self.dataloader = None
-
-    def prepare_data(self, ori_dirs, ucc_dirs, batch_size, n_workers, train=True):
-        self.dataset = UWCCDataset(ori_dirs, ucc_dirs, train=train)
-        self.dataloader = DataLoader(self.dataset, batch_size=batch_size, shuffle=True, num_workers=n_workers)
-
-    def train(self, ori_dirs, ucc_dirs, batch_size, n_workers, epochs):
-        self.prepare_data(ori_dirs, ucc_dirs, batch_size, n_workers, train=True)
-        
-        for epoch in range(epochs):
-            for batch in self.dataloader:
-                # Training loop
-                pass
-
-    def test(self, ori_dirs, ucc_dirs, batch_size, n_workers):
-        self.prepare_data(ori_dirs, ucc_dirs, batch_size, n_workers, train=False)
-        
-        for batch in self.dataloader:
-            # Testing loop
-            pass
-
-# Example usage:
-# trpo_agent = TRPOAgent()
-# trpo_agent.train(ori_dirs, ucc_dirs, batch_size, n_workers, epochs)
-# trpo_agent.test(ori_dirs, ucc_dirs, batch_size, n_workers)
