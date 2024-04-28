@@ -1,7 +1,6 @@
 import torch.utils.data as data
 import os
 from PIL import Image
-import numpy as np
 from torchvision import transforms
 
 def img_loader(path):
@@ -31,17 +30,19 @@ class UWCCDataset(data.Dataset):
         self.loader = loader
 
         if self.train:
-            print('Found {} pairs of training images'.format(len(self.img_list)))
+            print(f'Found {len(self.img_list)} pairs of training images')
         else:
-            print('Found {} pairs of testing images'.format(len(self.img_list)))
-
+            print(f'Found {len(self.img_list)} pairs of testing images')
+            
     def __getitem__(self, index):
         img_paths = self.img_list[index]
         sample = [self.loader(img_paths[i]) for i in range(len(img_paths))]
 
         if self.train:
             oritransform = transforms.Compose([
-                # Data augmentation transforms for training
+                # transforms.RandomResizedCrop(256, scale=(0.5, 1.0)),
+                # transforms.RandomHorizontalFlip(),
+                # transforms.RandomVerticalFlip(),
                 transforms.ToTensor(),
             ])
             ucctransform = transforms.Compose([
