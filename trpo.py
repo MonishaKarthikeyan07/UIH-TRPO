@@ -21,7 +21,6 @@ class TRPOAgent:
         return -torch.min(surr1, surr2).mean()
 
     def compute_advantages(self, rewards):
-        # This is a simple example, you may need to implement a more sophisticated advantage estimation method
         return rewards - rewards.mean()
 
     def train(self, ori_dirs, ucc_dirs, batch_size, n_workers, epochs):
