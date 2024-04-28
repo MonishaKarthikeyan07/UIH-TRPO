@@ -13,7 +13,7 @@ def get_imgs_list(ori_dirs, ucc_dirs):
         img_name = os.path.splitext(os.path.basename(ori_imgdir))[0]
         ucc_imgdir = os.path.join(os.path.dirname(ucc_dirs[0]), img_name + '.png')
 
-        if ucc_imgdir in ucc_dirs:
+        if os.path.exists(ucc_imgdir):
             img_list.append((ori_imgdir, ucc_imgdir))
 
     return img_list
@@ -40,9 +40,7 @@ class UWCCDataset(data.Dataset):
 
         if self.train:
             oritransform = transforms.Compose([
-                # transforms.RandomResizedCrop(256, scale=(0.5, 1.0)),
-                # transforms.RandomHorizontalFlip(),
-                # transforms.RandomVerticalFlip(),
+                # Data augmentation transforms for training
                 transforms.ToTensor(),
             ])
             ucctransform = transforms.Compose([
