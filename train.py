@@ -55,5 +55,13 @@ if __name__ == '__main__':
     ori_dirs = args.ori_dirs
     ucc_dirs = args.ucc_dirs
 
+    # Check if directories exist
+    if not os.path.exists(ori_dirs):
+        print(f"Error: Original image directory '{ori_dirs}' not found.")
+        sys.exit(1)
+    if not os.path.exists(ucc_dirs):
+        print(f"Error: UCC image directory '{ucc_dirs}' not found.")
+        sys.exit(1)
+
     trainer = Trainer()
     trainer.main(ori_dirs, ucc_dirs)
