@@ -11,6 +11,10 @@ from torchvision import transforms
 from model import PhysicalNN
 from uwcc import uwcc
 from trpo import TRPOAgent
+import torch.autograd
+torch.autograd.set_detect_anomaly(True)
+
+# Rest of your code...
 
 # Set start method for multiprocessing to "spawn" to avoid conflicts with multithreading
 torch.multiprocessing.set_start_method("spawn")
