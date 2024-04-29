@@ -21,6 +21,7 @@ class TRPOAgent:
         return -torch.min(surr1, surr2).mean()
 
     def compute_advantages(self, rewards):
+        rewards = rewards.float()  # Convert to floating-point dtype
         return rewards - rewards.mean()
 
     def train(self, ori_dirs, ucc_dirs, batch_size, n_workers, epochs):
