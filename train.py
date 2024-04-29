@@ -2,9 +2,9 @@ import argparse
 import os
 import sys
 import torch
+import shutil
 from trpo import TRPOAgent
 from uwcc import UWCCDataset
-
 
 class Trainer:
     def __init__(self):
@@ -49,7 +49,7 @@ def save_checkpoint(state, is_best):
         shutil.copyfile(filename, './checkpoints/model_best_{}.pth.tar'.format(epoch))
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train TRPO Agent')
+    parser = argparse.ArgumentParser()
     parser.add_argument('ori_dirs', type=str, help='Directory containing original images')
     parser.add_argument('ucc_dirs', type=str, help='Directory containing UCC images')
     args = parser.parse_args()
