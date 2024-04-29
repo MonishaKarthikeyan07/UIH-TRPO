@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader
 from uwcc import uwcc  # Import uwcc class from uwcc.py
 from model import PhysicalNN  # Import PhysicalNN from model.py
 
-
 class TRPOAgent:
     def __init__(self):
         self.policy = PhysicalNN()  # Define your policy network
@@ -14,7 +13,8 @@ class TRPOAgent:
         train_set = uwcc(ori_dirs, ucc_dirs, train=True)  # Use uwcc class instead of UWCCDataset
         
         if len(train_set) == 0:
-            raise RuntimeError('Found 0 image pairs in given directories.')
+            print("Found 0 image pairs in given directories.")
+            return None
         
         train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=n_workers)
         return train_loader
@@ -37,6 +37,10 @@ class TRPOAgent:
     def train(self, ori_dirs, ucc_dirs, batch_size, n_workers, epochs):
         torch.autograd.set_detect_anomaly(True)  # Enable anomaly detection
         dataloader = self.collect_samples(ori_dirs, ucc_dirs, batch_size, n_workers)
+        
+        if dataloader is None:
+            print("No data found. Exiting training.")
+            return
 
         for epoch in range(epochs):
             for batch in dataloader:
