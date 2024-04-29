@@ -19,7 +19,7 @@ def get_imgs_list(ori_dirs, ucc_dirs):
 
     return img_list
 
-class uwcc(data.Dataset):
+class UWCCDataset(data.Dataset):
     def __init__(self, ori_dirs, ucc_dirs, train=True, loader=img_loader):
         super(uwcc, self).__init__()
 
