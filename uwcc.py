@@ -10,12 +10,14 @@ def img_loader(path):
 def get_imgs_list(ori_dirs, ucc_dirs):
     img_list = []
     for ori_imgdir in ori_dirs:
-        img_name = os.path.splitext(os.path.basename(ori_imgdir))[0]
-        ucc_imgdir = os.path.join(os.path.dirname(ucc_dirs[0]), img_name + '.png')
-
-        if ucc_imgdir in ucc_dirs:
-            img_list.append((ori_imgdir, ucc_imgdir))
-
+        for root, dirs, files in os.walk(ori_imgdir):
+            for file in files:
+                if file.endswith(('.png', '.jpg', '.jpeg')):
+                    ori_img_path = os.path.join(root, file)
+                    img_name = os.path.splitext(file)[0]
+                    ucc_img_path = os.path.join(ucc_dirs[0], f"{img_name}.png")
+                    if os.path.exists(ucc_img_path):
+                        img_list.append((ori_img_path, ucc_img_path))
     return img_list
 
 class uwcc(data.Dataset):
