@@ -9,10 +9,16 @@ def img_loader(path):
     return img
 
 def enhance_image(image):
-    # Add image enhancement logic here
-    # This could involve algorithms like histogram equalization, gamma correction, etc.
-    # For demonstration, we'll use a simple brightness adjustment
-    enhanced_image = transforms.functional.adjust_brightness(image, 1.2)
+    # Your image enhancement process goes here
+    # For example, you can apply a transformation pipeline using torchvision.transforms
+    # Here's a simple example:
+    transform = transforms.Compose([
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        transforms.RandomRotation(degrees=15),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+    ])
+    enhanced_image = transform(image)
     return enhanced_image
 
 def get_imgs_list(ori_dirs, ucc_dirs):
@@ -46,18 +52,14 @@ class UWCCDataset(Dataset):
         img_paths = self.img_list[index]
         sample = [self.loader(img_paths[i]) for i in range(len(img_paths))]
 
-        # Image enhancement
         if self.train:
+            # Apply image enhancement to the first image (original image)
             sample[0] = enhance_image(sample[0])
 
-        oritransform = transforms.Compose([
+        transform = transforms.Compose([
             transforms.ToTensor(),
         ])
-        ucctransform = transforms.Compose([
-            transforms.ToTensor(),
-        ])
-        sample[0] = oritransform(sample[0])
-        sample[1] = ucctransform(sample[1])
+        sample[1] = transform(sample[1])  # Transform the UCC image to a tensor
 
         return sample
 
