@@ -46,4 +46,4 @@ class TRPOAgent:
                     loss.backward(retain_graph=True)  # Add retain_graph=True
                     self.optimizer.step()
 
-        return loss.item(
+        return loss.item()
