@@ -3,6 +3,8 @@ import os
 import sys
 import torch
 from trpo import TRPOAgent
+from uwcc import UWCCDataset
+
 
 class Trainer:
     def __init__(self):
