@@ -1,57 +1,66 @@
-'''
-Author:Xuelei Chen(chenxuelei@hotmail.com)
-'''
-import torch
-import numpy as np
-import torch.nn as nn
+import torch.utils.data as data
+import os
+from PIL import Image
+from torchvision import transforms
 
+def img_loader(path):
+    img = Image.open(path)
+    return img
 
-class AConvBlock(nn.Module):
-    def __init__(self):
-        super(AConvBlock,self).__init__()
+def get_imgs_list(ori_dirs, ucc_dirs):
+    img_list = []
+    for ori_imgdir in ori_dirs:
+        img_name = os.path.splitext(os.path.basename(ori_imgdir))[0]
+        ucc_imgdir = os.path.join(os.path.dirname(ucc_dirs[0]), img_name + '.png')
 
-        block = [nn.Conv2d(3,3,3,padding = 1)]
-        block += [nn.PReLU()]
+        if ucc_imgdir in ucc_dirs:
+            img_list.append((ori_imgdir, ucc_imgdir))
 
-        block += [nn.Conv2d(3,3,3,padding = 1)]
-        block += [nn.PReLU()]
+    return img_list
 
-        block += [nn.AdaptiveAvgPool2d((1,1))]
-        block += [nn.Conv2d(3,3,1)]
-        block += [nn.PReLU()]
-        block += [nn.Conv2d(3,3,1)]
-        block += [nn.PReLU()]
-        self.block = nn.Sequential(*block)
+class UWCCDataset(data.Dataset):
+    def __init__(self, ori_dirs, ucc_dirs, train=True, loader=img_loader):
+        super(uwcc, self).__init__()
 
-    def forward(self,x):
-        return self.block(x)
+        self.img_list = get_imgs_list(ori_dirs, ucc_dirs)
+        if len(self.img_list) == 0:
+            raise RuntimeError('Found 0 image pairs in given directories.')
 
-class tConvBlock(nn.Module):
-    def __init__(self):
-        super(tConvBlock,self).__init__()
+        self.train = train
+        self.loader = loader
 
-        block = [nn.Conv2d(6,8,3,padding=1,dilation=1)]
-        block += [nn.PReLU()]
-        block += [nn.Conv2d(8,8,3,padding=2,dilation=2)]
-        block += [nn.PReLU()]
-        block += [nn.Conv2d(8,8,3,padding=5,dilation=5)]
-        block += [nn.PReLU()]
+        if self.train:
+            print(f'Found {len(self.img_list)} pairs of training images')
+        else:
+            print(f'Found {len(self.img_list)} pairs of testing images')
+            
+    def __getitem__(self, index):
+        img_paths = self.img_list[index]
+        sample = [self.loader(img_paths[i]) for i in range(len(img_paths))]
 
-        block += [nn.Conv2d(8,3,3,padding=1)]
-        block += [nn.PReLU()]
-        self.block = nn.Sequential(*block)
-    def forward(self,x):
-        return self.block(x)
+        if self.train:
+            oritransform = transforms.Compose([
+                # transforms.RandomResizedCrop(256, scale=(0.5, 1.0)),
+                # transforms.RandomHorizontalFlip(),
+                # transforms.RandomVerticalFlip(),
+                transforms.ToTensor(),
+            ])
+            ucctransform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
+            sample[0] = oritransform(sample[0])
+            sample[1] = ucctransform(sample[1])
+        else:
+            oritransform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
+            ucctransform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
+            sample[0] = oritransform(sample[0])
+            sample[1] = ucctransform(sample[1])
 
-class PhysicalNN(nn.Module):
-    def __init__(self):
-        super(PhysicalNN,self).__init__()
+        return sample
 
-        self.ANet = AConvBlock()
-        self.tNet = tConvBlock()
-
-    def forward(self,x):
-        A = self.ANet(x)
-        t = self.tNet(torch.cat((x*0+A,x),1))
-        out = ((x-A)*t + A)
-        return torch.clamp(out,0.,1.)
+    def __len__(self):
+        return len(self.img_list)
