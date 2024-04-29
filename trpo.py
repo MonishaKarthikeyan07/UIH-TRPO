@@ -32,6 +32,9 @@ class TRPOAgent:
                 states, actions, rewards = batch
                 old_probs = self.policy(states)
 
+                # Ensure rewards tensor has appropriate dtype for computing the mean
+                rewards = rewards.float()  # Convert to floating-point dtype
+
                 # Compute advantages
                 advantages = self.compute_advantages(rewards)
 
@@ -40,7 +43,7 @@ class TRPOAgent:
                     new_probs = self.policy(states)
                     loss = self.surrogate_loss(old_probs, new_probs, advantages)
                     self.optimizer.zero_grad()
-                    loss.backward()
+                    loss.backward(retain_graph=True)  # Add retain_graph=True
                     self.optimizer.step()
 
-        return loss.item()
+        return loss.item(
