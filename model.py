@@ -1,56 +1,25 @@
-import torch
-import numpy as np
 import torch.nn as nn
+import torch.nn.functional as F
 
-class AConvBlock(nn.Module):
-    def __init__(self):
-        super(AConvBlock, self).__init__()
-
-        block = [nn.Conv2d(3, 3, 3, padding=1)]
-        block += [nn.PReLU()]
-
-        block += [nn.Conv2d(3, 3, 3, padding=1)]
-        block += [nn.PReLU()]
-
-        block += [nn.AdaptiveAvgPool2d((1, 1))]
-        block += [nn.Conv2d(3, 3, 1)]
-        block += [nn.PReLU()]
-        block += [nn.Conv2d(3, 3, 1)]
-        block += [nn.PReLU()]
-        self.block = nn.Sequential(*block)
+class Block(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(Block, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.relu = nn.ReLU(inplace=False)  # Use non-inplace ReLU
+        self.norm = nn.BatchNorm2d(out_channels)
 
     def forward(self, x):
-        return self.block(x)
-
-class tConvBlock(nn.Module):
-    def __init__(self):
-        super(tConvBlock, self).__init__()
-
-        block = [nn.Conv2d(6, 8, 3, padding=1, dilation=1)]
-        block += [nn.PReLU()]
-        block += [nn.Conv2d(8, 8, 3, padding=2, dilation=2)]
-        block += [nn.PReLU()]
-        block += [nn.Conv2d(8, 8, 3, padding=5, dilation=5)]
-        block += [nn.PReLU()]
-
-        block += [nn.Conv2d(8, 3, 3, padding=1)]
-        block += [nn.PReLU()]
-        self.block = nn.Sequential(*block)
-
-    def forward(self, x):
-        return self.block(x)
+        out = self.conv(x)
+        out = self.relu(out)
+        out = self.norm(out)
+        return out
 
 class PhysicalNN(nn.Module):
     def __init__(self):
         super(PhysicalNN, self).__init__()
-
-        self.ANet = AConvBlock()
-        self.tNet = tConvBlock()
+        self.tNet = Block(6, 64)
+        self.block = Block(64, 64)
 
     def forward(self, x):
-        A = self.ANet(x)
         t = self.tNet(torch.cat((x * 0 + A, x), 1))
-        out = ((x - A) * t + A)
-        return torch.clamp(out, 0., 1.)
-
-# Author: Xuelei Chen(chenxuelei@hotmail.com)
+        return self.block(t)
