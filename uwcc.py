@@ -10,15 +10,12 @@ def img_loader(path):
 def get_imgs_list(ori_dirs, ucc_dirs):
     img_list = []
     for ori_imgdir in ori_dirs:
-        for root, _, files in os.walk(ori_imgdir):
-            for file in files:
-                if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    img_name = os.path.splitext(file)[0]
-                    ucc_img_path = os.path.join(ucc_dirs[0], f"{img_name}.png")
-                    if os.path.exists(ucc_img_path):
-                        ori_img_path = os.path.join(root, file)
-                        img_list.append((ori_img_path, ucc_img_path))
-                        break  # Break loop after finding the matching image pair
+        img_name = os.path.splitext(os.path.basename(ori_imgdir))[0]
+        ucc_imgdir = os.path.join(os.path.dirname(ucc_dirs[0]), img_name + '.png')
+
+        if ucc_imgdir in ucc_dirs:
+            img_list.append((ori_imgdir, ucc_imgdir))
+
     return img_list
 
 class uwcc(data.Dataset):
@@ -36,14 +33,16 @@ class uwcc(data.Dataset):
             print(f'Found {len(self.img_list)} pairs of training images')
         else:
             print(f'Found {len(self.img_list)} pairs of testing images')
-
+            
     def __getitem__(self, index):
         img_paths = self.img_list[index]
         sample = [self.loader(img_paths[i]) for i in range(len(img_paths))]
 
         if self.train:
             oritransform = transforms.Compose([
-                # Data augmentation transforms for training
+                # transforms.RandomResizedCrop(256, scale=(0.5, 1.0)),
+                # transforms.RandomHorizontalFlip(),
+                # transforms.RandomVerticalFlip(),
                 transforms.ToTensor(),
             ])
             ucctransform = transforms.Compose([
