@@ -28,25 +28,22 @@ class Trainer:
                 'epoch': epoch + 1,
                 'state_dict': self.trpo_agent.policy.state_dict(),
                 'optimizer': self.trpo_agent.optimizer.state_dict(),
-            }, is_best)
+            }, epoch, is_best)
 
         print("Training complete.")
 
-def save_checkpoint(state, is_best):
+def save_checkpoint(state, epoch, is_best):
     """Saves checkpoint to disk"""
     freq = 500
-    epoch = state['epoch'] 
 
-    filename = './checkpoints/model_tmp.pth.tar'
-    if not os.path.exists('./checkpoints'):
-        os.makedirs('./checkpoints')
-
-    torch.save(state, filename)
+    filename = f'./checkpoints/model_epoch_{epoch}.pth.tar'
+    if is_best:
+        shutil.copyfile(filename, './checkpoints/model_best.pth.tar')
 
     if epoch % freq == 0:
-        shutil.copyfile(filename, './checkpoints/model_{}.pth.tar'.format(epoch))
-    if is_best:
-        shutil.copyfile(filename, './checkpoints/model_best_{}.pth.tar'.format(epoch))
+        shutil.copyfile(filename, f'./checkpoints/model_epoch_{epoch}.pth.tar')
+
+    torch.save(state, filename)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
