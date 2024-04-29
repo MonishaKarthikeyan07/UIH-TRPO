@@ -23,3 +23,4 @@ if __name__ == '__main__':
     print("Underwater corrected image directories:", args.ucc_dirs)
 
     main(args.ori_dirs, args.ucc_dirs, args.batch_size, args.n_workers, args.epochs)
+
