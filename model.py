@@ -19,7 +19,9 @@ class AConvBlock(nn.Module):
         self.block = nn.Sequential(*block)
 
     def forward(self, x):
-        return self.block(x)
+        x3 = self.block(x)
+        x = torch.cat((x * 0 + x3, x), 1)
+        return x
 
 class tConvBlock(nn.Module):
     def __init__(self):
@@ -37,10 +39,7 @@ class tConvBlock(nn.Module):
         self.block = nn.Sequential(*block)
 
     def forward(self, x):
-        x3 = self.block(x)
-        x = torch.cat((x * 0 + x3, x), 1)
-        return x
-
+        return self.block(x)
 
 class PhysicalNN(nn.Module):
     def __init__(self):
