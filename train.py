@@ -51,8 +51,8 @@ if __name__ == '__main__':
         print("Usage: python train.py TRAIN_RAW_IMAGE_FOLDER TRAIN_REFERENCE_IMAGE_FOLDER")
         sys.exit(1)
 
-    ori_dirs = sys.argv[1]
-    ucc_dirs = sys.argv[2]
+    # Extract command-line arguments
+    _, ori_dirs, ucc_dirs = sys.argv
 
     trainer = Trainer()
     trainer.main(ori_dirs, ucc_dirs)
