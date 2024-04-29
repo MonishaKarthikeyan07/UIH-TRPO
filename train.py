@@ -1,122 +1,83 @@
 import argparse
-import os
-import shutil
-import sys
-
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
-from torchvision import transforms
-
-from model import PhysicalNN
-from uwcc import uwcc
-from trpo import TRPOAgent
-import torch.autograd
-torch.autograd.set_detect_anomaly(True)
-
-# Rest of your code...
-
-# Set start method for multiprocessing to "spawn" to avoid conflicts with multithreading
-torch.multiprocessing.set_start_method("spawn")
+from uwcc import uwcc  # Import uwcc class from uwcc.py
+from model import PhysicalNN  # Import PhysicalNN from model.py
 
 def main():
-    best_loss = 9999.0
+    parser = argparse.ArgumentParser(description='Train TRPO Agent')
+    parser.add_argument('ori_dirs', type=str, help='Path to original images directory')
+    parser.add_argument('ucc_dirs', type=str, help='Path to ucc images directory')
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
+    parser.add_argument('--n_workers', type=int, default=4, help='Number of workers for data loading')
+    parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
+    args = parser.parse_args()
 
-    lr = 0.001
-    batchsize = 1
-    n_workers = 0  # Set number of workers to 0 to avoid multiprocessing conflicts
-    epochs = 100
-
-    # Check if correct number of arguments are provided
-    if len(sys.argv) != 3:
-        print("Usage: python train.py TRAIN_RAW_IMAGE_FOLDER TRAIN_REFERENCE_IMAGE_FOLDER")
-        return
-
-    ori_fd = sys.argv[1]
-    ucc_fd = sys.argv[2]
-
-    ori_dirs = [os.path.join(ori_fd, f) for f in os.listdir(ori_fd)]
-    ucc_dirs = [os.path.join(ucc_fd, f) for f in os.listdir(ucc_fd)]
-
-    # Create model
-    model = PhysicalNN()
-
-    # Define optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-
-    # Define criterion
-    criterion = nn.MSELoss()
-
-    # Load data
-    trainset = uwcc(ori_dirs, ucc_dirs, train=True)
-    trainloader = DataLoader(trainset, batchsize, shuffle=True, num_workers=n_workers)
-
-    # Train using TRPO
     trpo_agent = TRPOAgent()
-    trpo_agent.train(ori_dirs, ucc_dirs, batchsize, n_workers, epochs)
+    trpo_agent.train(args.ori_dirs, args.ucc_dirs, args.batch_size, args.n_workers, args.epochs)
 
-    # Traditional training
-    for epoch in range(epochs):
-        tloss = train(trainloader, model, optimizer, criterion, epoch)
-
-        print('Epoch:[{}/{}] Loss{}'.format(epoch, epochs, tloss))
-        is_best = tloss < best_loss
-        best_loss = min(tloss, best_loss)
-
-        save_checkpoint({
-            'epoch': epoch + 1,
-            'state_dict': model.state_dict(),
-            'optimizer': optimizer.state_dict(),
-        }, is_best)
-    print('Best Loss: ', best_loss)
-
-def train(trainloader, model, optimizer, criterion, epoch):
-    losses = AverageMeter()
-    model.train()
-
-    for i, sample in enumerate(trainloader):
-        ori, ucc = sample
-
-        corrected = model(ori)
-        loss = criterion(corrected, ucc)
-        losses.update(loss)
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-    return losses.avg
-
-def save_checkpoint(state, is_best):
-    freq = 500
-    epoch = state['epoch'] 
-
-    filename = './checkpoints/model_tmp.pth.tar'
-    if not os.path.exists('./checkpoints'):
-        os.makedirs('./checkpoints')
-
-    torch.save(state, filename)
-
-    if epoch % freq == 0:
-        shutil.copyfile(filename, './checkpoints/model_{}.pth.tar'.format(epoch))
-    if is_best:
-        shutil.copyfile(filename, './checkpoints/model_best_{}.pth.tar'.format(epoch))
-
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
+class TRPOAgent:
     def __init__(self):
-        self.reset()
+        self.policy = PhysicalNN()  # Define your policy network
+        self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=0.001)
 
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
+    def collect_samples(self, ori_dirs, ucc_dirs, batch_size, n_workers):
+        train_set = uwcc(ori_dirs, ucc_dirs, train=True)  # Use uwcc class instead of UWCCDataset
+        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=n_workers)
+        return train_loader
 
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
+    def surrogate_loss(self, old_probs, new_probs, advantages):
+        # Check for NaN or infinite values in input tensors
+        if torch.isnan(old_probs).any() or torch.isinf(old_probs).any():
+            raise ValueError("old_probs tensor contains NaN or infinite values.")
+        if torch.isnan(new_probs).any() or torch.isinf(new_probs).any():
+            raise ValueError("new_probs tensor contains NaN or infinite values.")
+        if torch.isnan(advantages).any() or torch.isinf(advantages).any():
+            raise ValueError("advantages tensor contains NaN or infinite values.")
 
-if __name__ == '__main__':
+        # Add a small epsilon value to avoid division by zero
+        eps = torch.finfo(old_probs.dtype).eps
+        old_probs = torch.clamp(old_probs, min=eps)
+
+        ratio = new_probs / old_probs
+        surr1 = ratio * advantages
+        surr2 = torch.clamp(ratio, 1.0 - 0.2, 1.0 + 0.2) * advantages
+
+        # Check for NaN or infinite values in intermediate tensors
+        if torch.isnan(surr1).any() or torch.isinf(surr1).any():
+            raise ValueError("surr1 tensor contains NaN or infinite values.")
+        if torch.isnan(surr2).any() or torch.isinf(surr2).any():
+            raise ValueError("surr2 tensor contains NaN or infinite values.")
+
+        return -torch.min(surr1, surr2).mean()
+
+    def compute_advantages(self, rewards):
+        rewards = rewards.float()  # Convert to floating-point dtype
+        return rewards - rewards.mean()
+
+    def train(self, ori_dirs, ucc_dirs, batch_size, n_workers, epochs):
+        dataloader = self.collect_samples(ori_dirs, ucc_dirs, batch_size, n_workers)
+
+        for epoch in range(epochs):
+            for batch in dataloader:
+                states, actions, rewards = batch
+                old_probs = self.policy(states)
+
+                # Ensure rewards tensor has appropriate dtype for computing the mean
+                rewards = rewards.float()  # Convert to floating-point dtype
+
+                # Compute advantages
+                advantages = self.compute_advantages(rewards)
+
+                # Policy gradient ascent
+                for _ in range(10):  # TRPO typically uses a line search or conjugate gradient
+                    new_probs = self.policy(states)
+                    loss = self.surrogate_loss(old_probs, new_probs, advantages)
+                    self.optimizer.zero_grad()
+                    loss.backward(retain_graph=True)  # Add retain_graph=True
+                    self.optimizer.step()
+
+        return loss.item()
+
+if __name__ == "__main__":
     main()
