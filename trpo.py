@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-from uwcc import UWCCDataset
+from uwcc import uwcc
 from model import PhysicalNN
 
 class TRPOAgent:
@@ -9,7 +9,7 @@ class TRPOAgent:
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=0.001)
 
     def collect_samples(self, ori_dirs, ucc_dirs, batch_size, n_workers):
-        train_set = UWCCDataset(ori_dirs, ucc_dirs, train=True)
+        train_set = uwcc(ori_dirs, ucc_dirs, train=True)  # Changed from UWCCDataset to uwcc
         train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=n_workers)
         return train_loader
 
