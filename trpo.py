@@ -15,14 +15,6 @@ class TRPOAgent:
         return train_loader
 
     def surrogate_loss(self, old_probs, new_probs, advantages):
-        # Check for NaN or infinite values in input tensors
-        if torch.isnan(old_probs).any() or torch.isinf(old_probs).any():
-            raise ValueError("old_probs tensor contains NaN or infinite values.")
-        if torch.isnan(new_probs).any() or torch.isinf(new_probs).any():
-            raise ValueError("new_probs tensor contains NaN or infinite values.")
-        if torch.isnan(advantages).any() or torch.isinf(advantages).any():
-            raise ValueError("advantages tensor contains NaN or infinite values.")
-
         # Add a small epsilon value to avoid division by zero
         eps = torch.finfo(old_probs.dtype).eps
         old_probs = torch.clamp(old_probs, min=eps)
@@ -31,12 +23,6 @@ class TRPOAgent:
         surr1 = ratio * advantages
         surr2 = torch.clamp(ratio, 1.0 - 0.2, 1.0 + 0.2) * advantages
 
-        # Check for NaN or infinite values in intermediate tensors
-        if torch.isnan(surr1).any() or torch.isinf(surr1).any():
-            raise ValueError("surr1 tensor contains NaN or infinite values.")
-        if torch.isnan(surr2).any() or torch.isinf(surr2).any():
-            raise ValueError("surr2 tensor contains NaN or infinite values.")
-
         return -torch.min(surr1, surr2).mean()
 
     def compute_advantages(self, rewards):
@@ -44,6 +30,7 @@ class TRPOAgent:
         return rewards - rewards.mean()
 
     def train(self, ori_dirs, ucc_dirs, batch_size, n_workers, epochs):
+        torch.autograd.set_detect_anomaly(True)  # Enable anomaly detection
         dataloader = self.collect_samples(ori_dirs, ucc_dirs, batch_size, n_workers)
 
         for epoch in range(epochs):
