@@ -13,44 +13,43 @@ def get_imgs_list(ori_dirs, ucc_dirs):
         img_name = os.path.splitext(os.path.basename(ori_imgdir))[0]
         ucc_imgdir = os.path.join(os.path.dirname(ucc_dirs[0]), img_name + '.png')
 
-        if os.path.exists(ucc_imgdir):
+        if ucc_imgdir in ucc_dirs:
             img_list.append((ori_imgdir, ucc_imgdir))
-        else:
-            print(f"UCC image '{ucc_imgdir}' not found for '{ori_imgdir}'")
 
     return img_list
 
 class UWCCDataset(data.Dataset):
     def __init__(self, ori_dirs, ucc_dirs, train=True, loader=img_loader):
-        super(UWCCDataset, self).__init__()
+        super(uwcc, self).__init__()
 
         self.img_list = get_imgs_list(ori_dirs, ucc_dirs)
         if len(self.img_list) == 0:
             raise RuntimeError('Found 0 image pairs in given directories.')
-        else:
-            print(f'Found {len(self.img_list)} image pairs in given directories.')
 
         self.train = train
         self.loader = loader
 
         if self.train:
-            print('Training mode')
+            print(f'Found {len(self.img_list)} pairs of training images')
         else:
-            print('Testing mode')
+            print(f'Found {len(self.img_list)} pairs of testing images')
             
     def __getitem__(self, index):
         img_paths = self.img_list[index]
         sample = [self.loader(img_paths[i]) for i in range(len(img_paths))]
 
-        # Apply transformations based on the mode
         if self.train:
             oritransform = transforms.Compose([
-                # Add your training transformations here
+                # transforms.RandomResizedCrop(256, scale=(0.5, 1.0)),
+                # transforms.RandomHorizontalFlip(),
+                # transforms.RandomVerticalFlip(),
                 transforms.ToTensor(),
             ])
             ucctransform = transforms.Compose([
                 transforms.ToTensor(),
             ])
+            sample[0] = oritransform(sample[0])
+            sample[1] = ucctransform(sample[1])
         else:
             oritransform = transforms.Compose([
                 transforms.ToTensor(),
@@ -58,10 +57,8 @@ class UWCCDataset(data.Dataset):
             ucctransform = transforms.Compose([
                 transforms.ToTensor(),
             ])
-        
-        # Apply transformations to each image
-        sample[0] = oritransform(sample[0])
-        sample[1] = ucctransform(sample[1])
+            sample[0] = oritransform(sample[0])
+            sample[1] = ucctransform(sample[1])
 
         return sample
 
