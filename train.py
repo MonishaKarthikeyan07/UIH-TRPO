@@ -20,7 +20,7 @@ class Trainer:
         for epoch in range(epochs):
             for batch in dataloader:
                 states, actions, rewards = batch
-                loss = self.trpo_agent.train(ori_dirs, ucc_dirs, batch_size, n_workers, epochs)
+                loss = self.trpo_agent.train(states, actions, rewards)
 
             # Save checkpoint
             is_best = False  # Modify this according to your criteria
