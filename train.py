@@ -1,7 +1,7 @@
 import argparse
 import torch
 from trpo import TRPOAgent
-from uwcc import UWCCDataset
+from uwcc import uwcc  # Import the uwcc class from uwcc.py
 
 def main(ori_dirs, ucc_dirs, batch_size, n_workers, epochs):
     trpo_agent = TRPOAgent()
