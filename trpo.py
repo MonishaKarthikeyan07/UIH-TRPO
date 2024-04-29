@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from uwcc import uwcc  # Import uwcc class from uwcc.py
 from model import PhysicalNN  # Import PhysicalNN from model.py
 
+
 class TRPOAgent:
     def __init__(self):
         self.policy = PhysicalNN()  # Define your policy network
@@ -11,6 +12,10 @@ class TRPOAgent:
 
     def collect_samples(self, ori_dirs, ucc_dirs, batch_size, n_workers):
         train_set = uwcc(ori_dirs, ucc_dirs, train=True)  # Use uwcc class instead of UWCCDataset
+        
+        if len(train_set) == 0:
+            raise RuntimeError('Found 0 image pairs in given directories.')
+        
         train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=n_workers)
         return train_loader
 
