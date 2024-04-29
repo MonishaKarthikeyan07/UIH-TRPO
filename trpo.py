@@ -1,10 +1,11 @@
 import torch
 from torch.utils.data import DataLoader
 from uwcc import UWCCDataset
+from model import PhysicalNN  # Assuming PhysicalNN is your policy network defined in model.py
 
 class TRPOAgent:
     def __init__(self):
-        self.policy = None  # Define your policy network here
+        self.policy = PhysicalNN()  # Initialize your policy network here
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=0.001)
 
     def collect_samples(self, ori_dirs, ucc_dirs, batch_size, n_workers):
