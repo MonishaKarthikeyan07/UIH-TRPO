@@ -1,68 +1,49 @@
-import torch
-import torch.utils.data as data
 import os
+import numpy as np
 from PIL import Image
-from torchvision import transforms
+from torch.utils.data import Dataset
 
-def img_loader(path):
-    img = Image.open(path)
-    return img
-
-def get_imgs_list(ori_dirs, ucc_dirs):
-    img_list = []
-    for ori_imgdir in ori_dirs:
-        img_name = os.path.splitext(os.path.basename(ori_imgdir))[0]
-        ucc_imgdir = os.path.join(os.path.dirname(ucc_dirs[0]), img_name + '.png')
-
-        if ucc_imgdir in ucc_dirs:
-            img_list.append((ori_imgdir, ucc_imgdir))
-
-    return img_list
-
-class uwcc(data.Dataset):
-    def __init__(self, ori_dirs, ucc_dirs, train=True, loader=img_loader):
-        super(uwcc, self).__init__()
-
-        self.img_list = get_imgs_list(ori_dirs, ucc_dirs)
-        if len(self.img_list) == 0:
-            raise RuntimeError('Found 0 image pairs in given directories.')
-
+class uwcc(Dataset):
+    def __init__(self, ori_dirs, ucc_dirs, train=True):
+        self.ori_dirs = ori_dirs
+        self.ucc_dirs = ucc_dirs
         self.train = train
-        self.loader = loader
+        self.image_pairs = self.find_image_pairs()
 
-        if self.train:
-            print(f'Found {len(self.img_list)} pairs of training images')
-        else:
-            print(f'Found {len(self.img_list)} pairs of testing images')
-            
-    def __getitem__(self, index):
-        img_paths = self.img_list[index]
-        sample = [self.loader(img_paths[i]) for i in range(len(img_paths))]
-
-        if self.train:
-            oritransform = transforms.Compose([
-                # transforms.RandomResizedCrop(256, scale=(0.5, 1.0)),
-                # transforms.RandomHorizontalFlip(),
-                # transforms.RandomVerticalFlip(),
-                transforms.ToTensor(),
-            ])
-            ucctransform = transforms.Compose([
-                transforms.ToTensor(),
-            ])
-            sample[0] = oritransform(sample[0])
-            sample[1] = ucctransform(sample[1])
-            sample.append(torch.tensor(0))  # Placeholder for reward value
-        else:
-            oritransform = transforms.Compose([
-                transforms.ToTensor(),
-            ])
-            ucctransform = transforms.Compose([
-                transforms.ToTensor(),
-            ])
-            sample[0] = oritransform(sample[0])
-            sample[1] = ucctransform(sample[1])
-
-        return sample
+        if len(self.image_pairs) == 0:
+            print("Warning: Found 0 image pairs in given directories.")
 
     def __len__(self):
-        return len(self.img_list)
+        return len(self.image_pairs)
+
+    def __getitem__(self, index):
+        ori_path, ucc_path = self.image_pairs[index]
+        ori_image = Image.open(ori_path)
+        ucc_image = Image.open(ucc_path)
+
+        # Convert images to numpy arrays and normalize
+        ori_array = np.array(ori_image) / 255.0
+        ucc_array = np.array(ucc_image) / 255.0
+
+        # Convert arrays to tensors
+        ori_tensor = torch.from_numpy(ori_array).permute(2, 0, 1).float()
+        ucc_tensor = torch.from_numpy(ucc_array).permute(2, 0, 1).float()
+
+        return ori_tensor, ucc_tensor
+
+    def find_image_pairs(self):
+        image_pairs = []
+
+        for ori_dir, ucc_dir in zip(self.ori_dirs, self.ucc_dirs):
+            ori_files = os.listdir(ori_dir)
+            ucc_files = os.listdir(ucc_dir)
+
+            for ori_file in ori_files:
+                ori_path = os.path.join(ori_dir, ori_file)
+                ucc_file = ori_file.replace('ori', 'ucc')
+                ucc_path = os.path.join(ucc_dir, ucc_file)
+
+                if ucc_file in ucc_files:
+                    image_pairs.append((ori_path, ucc_path))
+
+        return image_pairs
