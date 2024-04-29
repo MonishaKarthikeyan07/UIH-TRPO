@@ -33,7 +33,7 @@ class UWCCDataset(data.Dataset):
             print(f'Found {len(self.img_list)} pairs of training images')
         else:
             print(f'Found {len(self.img_list)} pairs of testing images')
-            
+
     def __getitem__(self, index):
         img_paths = self.img_list[index]
         sample = [self.loader(img_paths[i]) for i in range(len(img_paths))]
