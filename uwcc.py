@@ -8,6 +8,13 @@ def img_loader(path):
     img = Image.open(path)
     return img
 
+def enhance_image(image):
+    # Add image enhancement logic here
+    # This could involve algorithms like histogram equalization, gamma correction, etc.
+    # For demonstration, we'll use a simple brightness adjustment
+    enhanced_image = transforms.functional.adjust_brightness(image, 1.2)
+    return enhanced_image
+
 def get_imgs_list(ori_dirs, ucc_dirs):
     img_list = []
     for ori_imgdir in ori_dirs:
@@ -39,24 +46,18 @@ class UWCCDataset(Dataset):
         img_paths = self.img_list[index]
         sample = [self.loader(img_paths[i]) for i in range(len(img_paths))]
 
+        # Image enhancement
         if self.train:
-            oritransform = transforms.Compose([
-                transforms.ToTensor(),
-            ])
-            ucctransform = transforms.Compose([
-                transforms.ToTensor(),
-            ])
-            sample[0] = oritransform(sample[0])
-            sample[1] = ucctransform(sample[1])
-        else:
-            oritransform = transforms.Compose([
-                transforms.ToTensor(),
-            ])
-            ucctransform = transforms.Compose([
-                transforms.ToTensor(),
-            ])
-            sample[0] = oritransform(sample[0])
-            sample[1] = ucctransform(sample[1])
+            sample[0] = enhance_image(sample[0])
+
+        oritransform = transforms.Compose([
+            transforms.ToTensor(),
+        ])
+        ucctransform = transforms.Compose([
+            transforms.ToTensor(),
+        ])
+        sample[0] = oritransform(sample[0])
+        sample[1] = ucctransform(sample[1])
 
         return sample
 
