@@ -1,8 +1,8 @@
+import argparse
 import os
+import sys
 import torch
 from trpo import TRPOAgent
-import shutil
-import sys
 
 class Trainer:
     def __init__(self):
@@ -47,12 +47,13 @@ def save_checkpoint(state, is_best):
         shutil.copyfile(filename, './checkpoints/model_best_{}.pth.tar'.format(epoch))
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python train.py TRAIN_RAW_IMAGE_FOLDER TRAIN_REFERENCE_IMAGE_FOLDER")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description='Train TRPO Agent')
+    parser.add_argument('ori_dirs', type=str, help='Directory containing original images')
+    parser.add_argument('ucc_dirs', type=str, help='Directory containing UCC images')
+    args = parser.parse_args()
 
-    # Extract command-line arguments
-    _, ori_dirs, ucc_dirs = sys.argv
+    ori_dirs = args.ori_dirs
+    ucc_dirs = args.ucc_dirs
 
     trainer = Trainer()
     trainer.main(ori_dirs, ucc_dirs)
