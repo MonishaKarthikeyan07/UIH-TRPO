@@ -23,6 +23,11 @@ class UWCCDataset(Dataset):
     def __init__(self, ori_dirs, ucc_dirs, train=True, loader=img_loader):
         super(UWCCDataset, self).__init__()
 
+        print("Original image directories:")
+        print(ori_dirs)
+        print("UCC image directories:")
+        print(ucc_dirs)
+
         self.img_list = get_imgs_list(ori_dirs, ucc_dirs)
         if len(self.img_list) == 0:
             raise RuntimeError('Found 0 image pairs in given directories.')
