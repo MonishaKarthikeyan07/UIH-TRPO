@@ -4,7 +4,7 @@ import sys
 import torch
 import shutil
 from trpo import TRPOAgent
-from uwcc import UWCCDataset  # Import UWCCDataset class from uwcc.py
+from uwcc import UWCCDataset
 
 class Trainer:
     def __init__(self):
@@ -28,22 +28,25 @@ class Trainer:
                 'epoch': epoch + 1,
                 'state_dict': self.trpo_agent.policy.state_dict(),
                 'optimizer': self.trpo_agent.optimizer.state_dict(),
-            }, epoch, is_best)
+            }, is_best)
 
         print("Training complete.")
 
-def save_checkpoint(state, epoch, is_best):
+def save_checkpoint(state, is_best):
     """Saves checkpoint to disk"""
     freq = 500
+    epoch = state['epoch'] 
 
-    filename = f'./checkpoints/model_epoch_{epoch}.pth.tar'
-    if is_best:
-        shutil.copyfile(filename, './checkpoints/model_best.pth.tar')
-
-    if epoch % freq == 0:
-        shutil.copyfile(filename, f'./checkpoints/model_epoch_{epoch}.pth.tar')
+    filename = './checkpoints/model_tmp.pth.tar'
+    if not os.path.exists('./checkpoints'):
+        os.makedirs('./checkpoints')
 
     torch.save(state, filename)
+
+    if epoch % freq == 0:
+        shutil.copyfile(filename, './checkpoints/model_{}.pth.tar'.format(epoch))
+    if is_best:
+        shutil.copyfile(filename, './checkpoints/model_best_{}.pth.tar'.format(epoch))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
