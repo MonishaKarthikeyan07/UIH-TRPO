@@ -60,7 +60,10 @@ class uwcc(data.Dataset):
             sample[0] = oritransform(sample[0])
             sample[1] = ucctransform(sample[1])
 
-        return sample
+        # Placeholder for rewards
+        sample.append(torch.tensor(0))  # Assuming the reward value is 0 for now
+
+        return tuple(sample)  # Return as a tuple to ensure compatibility with DataLoader
 
     def __len__(self):
         return len(self.img_list)
