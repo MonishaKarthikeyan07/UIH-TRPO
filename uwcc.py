@@ -8,19 +8,6 @@ def img_loader(path):
     img = Image.open(path)
     return img
 
-def enhance_image(image):
-    # Your image enhancement process goes here
-    # For example, you can apply a transformation pipeline using torchvision.transforms
-    # Here's a simple example:
-    transform = transforms.Compose([
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
-        transforms.RandomRotation(degrees=15),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-    ])
-    enhanced_image = transform(image)
-    return enhanced_image
-
 def get_imgs_list(ori_dirs, ucc_dirs):
     img_list = []
     for ori_imgdir in ori_dirs:
@@ -53,13 +40,23 @@ class UWCCDataset(Dataset):
         sample = [self.loader(img_paths[i]) for i in range(len(img_paths))]
 
         if self.train:
-            # Apply image enhancement to the first image (original image)
-            sample[0] = enhance_image(sample[0])
-
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-        ])
-        sample[1] = transform(sample[1])  # Transform the UCC image to a tensor
+            oritransform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
+            ucctransform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
+            sample[0] = oritransform(sample[0])
+            sample[1] = ucctransform(sample[1])
+        else:
+            oritransform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
+            ucctransform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
+            sample[0] = oritransform(sample[0])
+            sample[1] = ucctransform(sample[1])
 
         return sample
 
