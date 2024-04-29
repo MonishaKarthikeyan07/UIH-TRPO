@@ -14,7 +14,7 @@ def get_imgs_list(ori_dirs, ucc_dirs):
         img_name = os.path.splitext(os.path.basename(ori_imgdir))[0]
         ucc_imgdir = os.path.join(os.path.dirname(ucc_dirs[0]), img_name + '.png')
 
-        if os.path.exists(ucc_imgdir):
+        if ucc_imgdir in ucc_dirs:
             img_list.append((ori_imgdir, ucc_imgdir))
 
     return img_list
