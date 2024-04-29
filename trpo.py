@@ -25,6 +25,8 @@ class TRPOAgent:
         return rewards - rewards.mean()
 
     def train(self, ori_dirs, ucc_dirs, batch_size, n_workers, epochs):
+        torch.autograd.set_detect_anomaly(True)  # Enable anomaly detection
+        
         dataloader = self.collect_samples(ori_dirs, ucc_dirs, batch_size, n_workers)
 
         for epoch in range(epochs):
