@@ -20,7 +20,7 @@ def get_imgs_list(ori_dirs, ucc_dirs):
 
 class UWCCDataset(data.Dataset):
     def __init__(self, ori_dirs, ucc_dirs, train=True, loader=img_loader):
-        super(uwcc, self).__init__()
+        super(UWCCDataset, self).__init__()
 
         self.img_list = get_imgs_list(ori_dirs, ucc_dirs)
         if len(self.img_list) == 0:
@@ -40,9 +40,7 @@ class UWCCDataset(data.Dataset):
 
         if self.train:
             oritransform = transforms.Compose([
-                # transforms.RandomResizedCrop(256, scale=(0.5, 1.0)),
-                # transforms.RandomHorizontalFlip(),
-                # transforms.RandomVerticalFlip(),
+                # Define your training transforms here
                 transforms.ToTensor(),
             ])
             ucctransform = transforms.Compose([
