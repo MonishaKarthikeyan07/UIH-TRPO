@@ -15,22 +15,24 @@ class Trainer:
         n_workers = 2
         epochs = 50
 
-        dataloader = self.trpo_agent.collect_samples(ori_dirs, ucc_dirs, batch_size, n_workers)
+        try:
+            dataloader = self.trpo_agent.collect_samples(ori_dirs, ucc_dirs, batch_size, n_workers)
+            for epoch in range(epochs):
+                for batch in dataloader:
+                    states, actions, rewards = batch
+                    loss = self.trpo_agent.train(ori_dirs, ucc_dirs, batch_size, n_workers, epochs)
 
-        for epoch in range(epochs):
-            for batch in dataloader:
-                states, actions, rewards = batch
-                loss = self.trpo_agent.train(ori_dirs, ucc_dirs, batch_size, n_workers, epochs)
+                # Save checkpoint
+                is_best = False  # Modify this according to your criteria
+                save_checkpoint({
+                    'epoch': epoch + 1,
+                    'state_dict': self.trpo_agent.policy.state_dict(),
+                    'optimizer': self.trpo_agent.optimizer.state_dict(),
+                }, is_best)
 
-            # Save checkpoint
-            is_best = False  # Modify this according to your criteria
-            save_checkpoint({
-                'epoch': epoch + 1,
-                'state_dict': self.trpo_agent.policy.state_dict(),
-                'optimizer': self.trpo_agent.optimizer.state_dict(),
-            }, is_best)
-
-        print("Training complete.")
+            print("Training complete.")
+        except RuntimeError as e:
+            print(f"Error during training: {str(e)}")
 
 def save_checkpoint(state, is_best):
     """Saves checkpoint to disk"""
