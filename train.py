@@ -1,10 +1,7 @@
 import argparse
 import os
 import sys
-import torch
-import shutil
 from trpo import TRPOAgent
-from uwcc import uwcc
 
 class Trainer:
     def __init__(self):
