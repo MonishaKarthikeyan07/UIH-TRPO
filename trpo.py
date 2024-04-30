@@ -9,7 +9,7 @@ class TRPOAgent:
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=0.001)
 
     def collect_samples(self, ori_dirs, ucc_dirs, batch_size, n_workers):
-        train_set = uwcc(ori_dirs, ucc_dirs, train=True)  # Changed from UWCCDataset to uwcc
+        train_set = uwcc(ori_dirs, ucc_dirs, train=True)
         train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=n_workers)
         return train_loader
 
@@ -27,22 +27,18 @@ class TRPOAgent:
         rewards = rewards.float()
         return rewards - rewards.mean()
 
-    def train(self, ori_dirs, ucc_dirs, batch_size, n_workers, epochs):
+    def train(self, states, actions, rewards):
         torch.autograd.set_detect_anomaly(True)
-        dataloader = self.collect_samples(ori_dirs, ucc_dirs, batch_size, n_workers)
 
-        for epoch in range(epochs):
-            for batch in dataloader:
-                states, actions, rewards = batch
-                old_probs = self.policy(states)
-                rewards = rewards.float()
-                advantages = self.compute_advantages(rewards)
+        old_probs = self.policy(states)
+        rewards = rewards.float()
+        advantages = self.compute_advantages(rewards)
 
-                for _ in range(10):
-                    new_probs = self.policy(states)
-                    loss = self.surrogate_loss(old_probs, new_probs, advantages)
-                    self.optimizer.zero_grad()
-                    loss.backward(retain_graph=True)
-                    self.optimizer.step()
+        for _ in range(10):
+            new_probs = self.policy(states)
+            loss = self.surrogate_loss(old_probs, new_probs, advantages)
+            self.optimizer.zero_grad()
+            loss.backward(retain_graph=True)
+            self.optimizer.step()
 
         return loss.item()
